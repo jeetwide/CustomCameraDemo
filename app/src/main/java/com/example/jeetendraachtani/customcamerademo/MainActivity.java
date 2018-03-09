@@ -31,6 +31,7 @@ public class MainActivity extends AppCompatActivity {
     FrameLayout frameLayout;
 
     final int Req_CAMERA = 1;
+    final int Req_Storage = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
         btn_capture.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                captureImage();
+                captureImage(null);
             }
         });
 
@@ -71,9 +72,9 @@ public class MainActivity extends AppCompatActivity {
 
             File picture_file = getOutputMediaFile();
 
-            if(picture_file== null){
-                    return;
-            }else{
+            if (picture_file == null) {
+                return;
+            } else {
                 try {
                     FileOutputStream fos = new FileOutputStream(picture_file);
                     fos.write(data);
@@ -81,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
 
                     camera.startPreview();
 
-                }catch (IOException e){
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
 
@@ -92,25 +93,25 @@ public class MainActivity extends AppCompatActivity {
 
     private File getOutputMediaFile() {
         String state = Environment.getExternalStorageState();
-        if(!state.equals(Environment.MEDIA_MOUNTED)){
+        if (!state.equals(Environment.MEDIA_MOUNTED)) {
             return null;
-        }else{
+        } else {
 
-            File folder_gui = new File(Environment.getExternalStorageDirectory()+ File.separator + "GUI");
+            File folder_gui = new File(Environment.getExternalStorageDirectory() + File.separator + "GUI");
 
-            if(!folder_gui.exists()){
+            if (!folder_gui.exists()) {
                 folder_gui.mkdirs();
             }
-            File outputFile = new File(folder_gui,"temp.jpg");
+            File outputFile = new File(folder_gui, "temp.jpg");
             return outputFile;
         }
 
     }
 
-    private void captureImage() {    //captureImage(View v)
+    private void captureImage(View v) {    //captureImage(View v)
 
         if (camera != null) {
-            camera.takePicture(null, null, mPictureCallBack );
+            camera.takePicture(null, null, mPictureCallBack);
         }
     }
 
@@ -151,12 +152,14 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this, "Camera Permission denied", Toast.LENGTH_SHORT).show();
                 }
                 return;
+
             }
-
-            // other 'case' lines to check for other
-            // permissions this app might request
         }
+
+        // other 'case' lines to check for other
+        // permissions this app might request
     }
-
-
 }
+
+
+
