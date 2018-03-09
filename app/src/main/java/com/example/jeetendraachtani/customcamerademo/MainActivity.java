@@ -4,11 +4,19 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.hardware.Camera;
+import android.os.Environment;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.Toast;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -18,16 +26,18 @@ public class MainActivity extends AppCompatActivity {
     Camera camera;
     ShowCamera showCamera;
 
+    Button btn_capture;
 
     FrameLayout frameLayout;
 
-    final int Req_CAMERA=1;
+    final int Req_CAMERA = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+        btn_capture = (Button) findViewById(R.id.btn_capture);
 
 
         if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -45,19 +55,76 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         initialize();
+
+        btn_capture.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                captureImage();
+            }
+        });
+
     }
 
-    private void initialize(){
-        try{
-            frameLayout=(FrameLayout)findViewById(R.id.frameLayout);
+    Camera.PictureCallback mPictureCallBack = new Camera.PictureCallback() {
+        @Override
+        public void onPictureTaken(byte[] data, Camera camera) {
+
+            File picture_file = getOutputMediaFile();
+
+            if(picture_file== null){
+                    return;
+            }else{
+                try {
+                    FileOutputStream fos = new FileOutputStream(picture_file);
+                    fos.write(data);
+                    fos.close();
+
+                    camera.startPreview();
+
+                }catch (IOException e){
+                    e.printStackTrace();
+                }
+
+            }
+
+        }
+    };
+
+    private File getOutputMediaFile() {
+        String state = Environment.getExternalStorageState();
+        if(!state.equals(Environment.MEDIA_MOUNTED)){
+            return null;
+        }else{
+
+            File folder_gui = new File(Environment.getExternalStorageDirectory()+ File.separator + "GUI");
+
+            if(!folder_gui.exists()){
+                folder_gui.mkdirs();
+            }
+            File outputFile = new File(folder_gui,"temp.jpg");
+            return outputFile;
+        }
+
+    }
+
+    private void captureImage() {    //captureImage(View v)
+
+        if (camera != null) {
+            camera.takePicture(null, null, mPictureCallBack );
+        }
+    }
+
+    private void initialize() {
+        try {
+            frameLayout = (FrameLayout) findViewById(R.id.frameLayout);
 
             //open Camera
 
-            camera=Camera.open();
+            camera = Camera.open();
 
-            showCamera= new ShowCamera(this,camera);
+            showCamera = new ShowCamera(this, camera);
             frameLayout.addView(showCamera);
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -90,7 +157,6 @@ public class MainActivity extends AppCompatActivity {
             // permissions this app might request
         }
     }
-
 
 
 }
