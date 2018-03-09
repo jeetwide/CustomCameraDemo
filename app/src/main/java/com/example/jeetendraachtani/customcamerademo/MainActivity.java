@@ -31,14 +31,14 @@ public class MainActivity extends AppCompatActivity {
     FrameLayout frameLayout;
 
     final int Req_CAMERA = 1;
-    final int Req_Storage = 2;
+    final int Req_WRITE_EXTERNAL_STORAGE = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
-        btn_capture = (Button) findViewById(R.id.btn_capture);
+
 
 
         if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -55,14 +55,10 @@ public class MainActivity extends AppCompatActivity {
                     Req_CAMERA);
             return;
         }
+
         initialize();
 
-        btn_capture.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                captureImage(null);
-            }
-        });
+
 
     }
 
@@ -92,6 +88,8 @@ public class MainActivity extends AppCompatActivity {
     };
 
     private File getOutputMediaFile() {
+
+        checkWritePermission();
         String state = Environment.getExternalStorageState();
         if (!state.equals(Environment.MEDIA_MOUNTED)) {
             return null;
@@ -102,7 +100,9 @@ public class MainActivity extends AppCompatActivity {
             if (!folder_gui.exists()) {
                 folder_gui.mkdirs();
             }
-            File outputFile = new File(folder_gui, "temp.jpg");
+            Long tsLong = System.currentTimeMillis()/1000;
+            String ts = tsLong.toString();
+            File outputFile = new File(folder_gui, ts+".jpg");
             return outputFile;
         }
 
@@ -119,14 +119,46 @@ public class MainActivity extends AppCompatActivity {
         try {
             frameLayout = (FrameLayout) findViewById(R.id.frameLayout);
 
+            btn_capture = (Button) findViewById(R.id.btn_capture);
+            btn_capture.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    checkWritePermission();
+
+                    captureImage(null);
+                }
+            });
+
             //open Camera
 
             camera = Camera.open();
 
             showCamera = new ShowCamera(this, camera);
             frameLayout.addView(showCamera);
+            checkWritePermission();
+
+
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+
+    private void checkWritePermission(){
+        if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+
+            ActivityCompat.requestPermissions(MainActivity.this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    Req_WRITE_EXTERNAL_STORAGE);
+            return;
         }
     }
 
@@ -150,6 +182,29 @@ public class MainActivity extends AppCompatActivity {
                     // permission denied, boo! Disable the
                     // functionality that depends on this permission.
                     Toast.makeText(MainActivity.this, "Camera Permission denied", Toast.LENGTH_SHORT).show();
+                }
+                return;
+
+            }
+            case Req_WRITE_EXTERNAL_STORAGE: {
+
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    // permission was granted, yay! Do the
+                    // contacts-related task you need to do.
+
+                    File folder_gui = new File(Environment.getExternalStorageDirectory() + File.separator + "GUI");
+
+                    if (!folder_gui.exists()) {
+                        folder_gui.mkdirs();
+                    }
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                    Toast.makeText(MainActivity.this, "Storage Permission denied", Toast.LENGTH_SHORT).show();
                 }
                 return;
 
